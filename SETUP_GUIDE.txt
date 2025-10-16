@@ -1,0 +1,280 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   WORKSPACE ORGANIZER - SETUP GUIDE                          ║
+║                   A Beautiful Python Desktop Application                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📋 TABLE OF CONTENTS:
+  1. Installation Steps
+  2. Running the Application
+  3. Building the Executable
+  4. Features Overview
+  5. Customization
+  6. Troubleshooting
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ STEP 1: INSTALLATION
+
+A. Prerequisites:
+   ✓ Windows 10 or Windows 11
+   ✓ Python 3.8 or higher (Download from: https://www.python.org/downloads/)
+   
+   To check if Python is installed:
+   - Open Command Prompt (Win + R, type: cmd)
+   - Type: python --version
+   - You should see: Python 3.x.x
+
+B. Install Dependencies:
+   Method 1 (Easiest - Just double-click):
+   ✓ Double-click: RUN_APP.bat
+   ✓ It will automatically install everything needed
+   
+   Method 2 (Manual - via Command Prompt):
+   ✓ Open Command Prompt in this folder
+   ✓ Type: python -m pip install -r requirements.txt
+   ✓ Wait for installation to complete
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 STEP 2: RUNNING THE APPLICATION
+
+Option 1 (Easiest):
+   ✓ Double-click: RUN_APP.bat
+   ✓ The app will launch automatically
+
+Option 2 (Using Command Prompt):
+   ✓ Open Command Prompt in this folder
+   ✓ Type: python main.py
+   ✓ Press Enter
+
+Option 3 (Using Quick Start Menu):
+   ✓ Open Command Prompt in this folder
+   ✓ Type: python quickstart.py
+   ✓ Choose option 2 from the menu
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📦 STEP 3: BUILDING THE EXECUTABLE (.exe)
+
+What is an executable?
+   - A standalone .exe file that works without needing Python installed
+   - You can share it with friends or run it on any Windows computer
+   - No dependencies needed on the target computer
+
+How to build:
+
+Method 1 (Easiest - Just double-click):
+   ✓ Double-click: BUILD_EXE.bat
+   ✓ Wait for the build to complete (3-5 minutes)
+   ✓ Your .exe will be in the "dist" folder
+
+Method 2 (Using Command Prompt):
+   ✓ Open Command Prompt in this folder
+   ✓ Type: python build_exe.py
+   ✓ Wait for build to complete
+
+After building:
+   ✓ Find the executable: dist/WorkspaceOrganizer.exe
+   ✓ Copy it to your Desktop
+   ✓ Create a shortcut (right-click > Send to > Desktop)
+   ✓ You can now run it anytime!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ FEATURES OVERVIEW
+
+📊 Dashboard Tab:
+   • Current date and time display
+   • Calendar view
+   • Quick statistics
+   • Music player (mockup)
+   • File showcase
+   • Inspiration images
+
+📁 Files Tab:
+   • Scan any folder on your computer
+   • View all files in that folder
+   • Search functionality
+   • Files are categorized by type:
+     - Documents (PDF, DOC, XLSX, etc.)
+     - Images (JPG, PNG, GIF, etc.)
+     - Videos (MP4, AVI, MKV, etc.)
+     - Audio (MP3, WAV, FLAC, etc.)
+     - Archives (ZIP, RAR, 7Z, etc.)
+     - Other files
+
+📝 Notes Tab:
+   • Create new notes
+   • Save notes with timestamps
+   • All notes are stored locally
+   • Search through your notes
+   • Quick access from dashboard
+
+📅 Calendar Tab:
+   • Full calendar view
+   • Mark important dates
+   • Plan your productivity
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎨 CUSTOMIZATION
+
+Change Colors:
+   1. Open: ui/styles.py
+   2. Find these colors:
+      - #667eea (Purple)
+      - #764ba2 (Dark Purple)
+      - #f5f7fa (Light Gray)
+   3. Replace with your favorite colors
+   4. Save and run the app again
+
+Add More File Categories:
+   1. Open: core/file_manager.py
+   2. Find the categorize_files() function
+   3. Add your own file extensions to categories
+   4. Save and restart
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🆘 TROUBLESHOOTING
+
+Problem: "Python is not installed"
+Solution:
+   • Download Python from: https://www.python.org/downloads/
+   • During installation, CHECK: "Add Python to PATH"
+   • Restart Command Prompt
+   • Try again
+
+Problem: "Command not found" or "python not found"
+Solution:
+   • Make sure Python is installed and added to PATH
+   • Try: py main.py (instead of python main.py)
+   • Or restart your computer
+
+Problem: "ModuleNotFoundError: No module named 'PyQt6'"
+Solution:
+   • Dependencies not installed
+   • Run: python -m pip install -r requirements.txt
+   • Wait for completion
+   • Try running the app again
+
+Problem: App crashes or won't start
+Solution:
+   • Check error message in Command Prompt
+   • Make sure all dependencies are installed
+   • Try: python -m pip install --upgrade PyQt6
+   • Restart the app
+
+Problem: Executable won't build
+Solution:
+   • Make sure PyInstaller is installed:
+     python -m pip install pyinstaller
+   • Try building again
+   • If still fails, check console for detailed error
+
+Problem: "Permission denied" when scanning folder
+Solution:
+   • Right-click Command Prompt
+   • Select "Run as administrator"
+   • Try scanning again
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💾 DATA STORAGE
+
+All your personal data is stored in:
+   C:\Users\YourUsername\.workspace_organizer\
+
+Contents:
+   • config.json - Your settings
+   • notes/ - Your saved notes
+   
+Your data is NEVER sent anywhere - it stays on your computer!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 PROJECT STRUCTURE
+
+Workspace-Organizer/
+├── main.py                          ← Main application
+├── RUN_APP.bat                      ← Quick start (just double-click!)
+├── BUILD_EXE.bat                    ← Build executable (just double-click!)
+├── requirements.txt                 ← Python dependencies
+├── README.md                        ← Full documentation
+├── SETUP_GUIDE.txt                  ← This file
+├── ui/
+│   ├── __init__.py
+│   ├── widgets.py                  ← Custom UI components
+│   └── styles.py                   ← Color and styling
+├── core/
+│   ├── __init__.py
+│   ├── file_manager.py            ← File scanning logic
+│   └── notes_manager.py           ← Notes storage logic
+└── dist/
+    └── WorkspaceOrganizer.exe      ← Your executable (created after building)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 NEXT STEPS
+
+1. ✓ Installation complete - You've set up Python and dependencies
+
+2. Test the app:
+   • Double-click RUN_APP.bat
+   • Try the different tabs
+   • Scan a folder with your files
+   • Create some notes
+
+3. When ready to build executable:
+   • Double-click BUILD_EXE.bat
+   • Wait for build to complete
+   • Get your .exe from the dist/ folder
+
+4. Customize (Optional):
+   • Edit colors in ui/styles.py
+   • Add more features
+   • Share with friends!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TIPS & TRICKS
+
+• The app works best with folders containing 10,000 files or less
+• Notes are saved automatically when you create them
+• Avoid scanning system folders (C:\Windows) as they're huge
+• For best performance, use with standard user folders:
+  - C:\Users\YourUsername\Documents
+  - C:\Users\YourUsername\Pictures
+  - C:\Users\YourUsername\Desktop
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 GETTING HELP
+
+If something doesn't work:
+
+1. Check the error message carefully
+2. Google the error message
+3. Check the TROUBLESHOOTING section above
+4. Try running from Command Prompt to see detailed errors:
+   - Open Command Prompt
+   - Type: cd C:\path\to\Workspace-Organizer
+   - Type: python main.py
+   - Read any error messages
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 YOU'RE ALL SET!
+
+Your beautiful Workspace Organizer is ready to boost your productivity!
+
+Quick Commands to Remember:
+   • Run app: double-click RUN_APP.bat
+   • Build exe: double-click BUILD_EXE.bat
+   • Install deps: python -m pip install -r requirements.txt
+   • Run from code: python main.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Happy organizing! 🚀
+For more information, see README.md

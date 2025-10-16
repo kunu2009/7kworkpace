@@ -1,0 +1,221 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                 🎉 WORKSPACE ORGANIZER v3.0                               ║
+║              QUICK REFERENCE - Professional File Manager                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🌙 DARK MODE: Ctrl+D (Enabled by default)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 DASHBOARD TAB
+├─ 📁 Files Scanned: Total file count
+├─ 💾 Storage Used: Total size with units (B, MB, GB, TB)
+├─ 📝 Notes Created: Note count
+├─ 📂 File Types: Number of unique file extensions
+├─ 📋 Recent Files: 10 most recently modified files
+└─ 📊 File Distribution: Breakdown by type
+
+═══════════════════════════════════════════════════════════════════════════
+
+📁 FILES TAB (Advanced Browser)
+├─ 🔍 Search: Type to filter by filename (real-time)
+├─ 📂 Filter: Select category or type
+├─ 📏 Min Size: Filter files by minimum size in MB
+│
+└─ File Table with:
+   ├─ Name: Filename
+   ├─ Size: File size in MB
+   ├─ Type: File extension
+   ├─ Modified: Last modified date/time
+   └─ Path: Full file path
+   
+   Actions:
+   ├─ 📂 Open File: Opens in default app
+   ├─ 🗑️ Delete: Remove file
+   └─ 📋 Copy Path: Copy to clipboard
+
+═══════════════════════════════════════════════════════════════════════════
+
+📋 ORGANIZATION TAB
+├─ 🔄 Auto-Organize: Sort files into type folders
+├─ 🔍 Find Duplicates: Detect identical files (by size + hash)
+├─ 🧹 Cleanup Empty: Remove empty directories
+├─ 📦 Archive Old Files: Coming soon
+├─ 📅 Organize by Date: Create YYYY/MM/DD structure
+└─ ⚙️ Settings: Configuration (coming soon)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📝 NOTES TAB
+├─ ➕ New Note: Create blank note
+├─ 💾 Save Note: Save with timestamp
+├─ 🗑️ Clear: Empty text area
+├─ Text Editor: Type your notes
+└─ 📚 All Notes: Click to load and edit
+
+═══════════════════════════════════════════════════════════════════════════
+
+📈 ANALYTICS TAB
+├─ Total Files: Count of all files
+├─ Total Storage: Combined size
+├─ File Types: Number of unique extensions
+├─ Largest File: Biggest file with size
+└─ Average Size: Mean file size
+
+═══════════════════════════════════════════════════════════════════════════
+
+📅 CALENDAR TAB
+└─ Full functional calendar for planning
+
+═══════════════════════════════════════════════════════════════════════════
+
+⌨️ KEYBOARD SHORTCUTS
+
+Ctrl+O            Scan Folder
+Ctrl+D            Toggle Dark Mode / Light Mode
+Ctrl+Q            Exit Application
+F5                Refresh Dashboard
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 FILE FILTERS
+
+Category Filter:
+  ├─ All Files: No filter
+  ├─ Documents: .pdf, .doc, .docx, .txt, .xlsx, .xls, .ppt, .pptx, .odt
+  ├─ Images: .jpg, .jpeg, .png, .gif, .bmp, .svg, .ico, .webp
+  ├─ Videos: .mp4, .avi, .mkv, .mov, .wmv, .flv, .m4v
+  ├─ Audio: .mp3, .wav, .flac, .aac, .ogg, .m4a, .wma
+  ├─ Archives: .zip, .rar, .7z, .tar, .gz, .bz2, .iso
+  └─ Code: .py, .js, .java, .cpp, .c, .html, .css, .sql, .json
+
+Size Filter:
+  └─ Minimum file size in MB (e.g., 100 = 100+ MB files)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 COMMON WORKFLOWS
+
+Organize Downloads Folder:
+  1. Scan Folder → Select Downloads
+  2. Organization → Auto-Organize
+  3. See results in Analytics
+
+Find Large Files:
+  1. Scan Folder
+  2. Files Tab → Set Min Size to 500 MB
+  3. See files larger than 500 MB
+
+Cleanup Duplicates:
+  1. Scan Folder
+  2. Organization → Find Duplicates
+  3. Review and manually delete
+  4. Organization → Cleanup Empty
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎨 THEME COLORS
+
+Dark Mode (Default):
+  • Background: #1e1e1e (very dark)
+  • Cards: #2d2d2d (dark gray)
+  • Text: #e0e0e0 (light gray)
+  • Accent: #667eea (purple)
+
+Light Mode:
+  • Background: #f5f7fa (light gray)
+  • Cards: white
+  • Text: #333 (dark)
+  • Accent: #667eea (purple)
+
+═══════════════════════════════════════════════════════════════════════════
+
+💾 DATA STORAGE
+
+App Data Location:
+  C:\Users\[YourUsername]\.workspace_organizer\
+
+Contents:
+  ├─ config.json: Settings
+  └─ notes/: Your saved notes (*.json files)
+
+All data stays on your computer (100% local, no cloud sync)
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚙️ MENU BAR OPTIONS
+
+📁 File
+  ├─ 🔍 Scan Folder (Ctrl+O)
+  ├─ 📂 Open in Explorer
+  └─ ❌ Exit (Ctrl+Q)
+
+👁️ View
+  ├─ 🌙 Toggle Theme (Ctrl+D)
+  └─ 🔄 Refresh (F5)
+
+🛠️ Tools
+  ├─ 📋 Organize Files
+  ├─ 🔍 Find Duplicates
+  └─ 🧹 Cleanup
+
+❓ Help
+  └─ ℹ️ About
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ PERFORMANCE
+
+Recommended:
+  • Scan folders with < 100,000 files
+  • Organize folders < 50 GB
+  • Use filters to reduce display items
+  • Run cleanup after organizing
+
+Display Limit: First 500 files in table
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ QUICK START
+
+1. Launch: python main.py or double-click RUN_APP.bat
+2. Dark mode is ON by default 🌙
+3. Click "🔍 SCAN FOLDER"
+4. Select your folder
+5. Browse files in "📁 Files" tab
+6. Use "📋 Organization" tab to organize
+7. Check "📈 Analytics" for stats
+8. Press Ctrl+D to toggle light/dark mode
+
+═══════════════════════════════════════════════════════════════════════════
+
+❓ FREQUENTLY ASKED
+
+Q: How do I turn off dark mode?
+A: Press Ctrl+D or go to View → Toggle Theme
+
+Q: Can I delete files?
+A: Yes! Select file in Files tab, click Delete (confirmation required)
+
+Q: How do I organize my folder?
+A: Use Organization tab - Auto-Organize or Organize by Date
+
+Q: Where are my notes saved?
+A: C:\Users\[YourUsername]\.workspace_organizer\notes\
+
+Q: How do I find duplicate files?
+A: Organization tab → Find Duplicates
+
+Q: Can I undo organizing?
+A: No - be careful! Use backup of your folder first
+
+Q: Does it work with network drives?
+A: Yes, but slower - use local drives when possible
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 You're ready to go!
+
+Enjoy your professional file organizer! 🎉
+
+═══════════════════════════════════════════════════════════════════════════

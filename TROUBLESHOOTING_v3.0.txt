@@ -1,0 +1,351 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║              WORKSPACE ORGANIZER v3.0 - TROUBLESHOOTING GUIDE             ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+❓ FREQUENTLY ASKED QUESTIONS & SOLUTIONS
+
+═══════════════════════════════════════════════════════════════════════════
+
+Q1: Dark mode is not working or not fully applied?
+A1: Dark mode is now 100% complete in v3.0
+    Solution:
+    1. Press Ctrl+D to toggle theme
+    2. Check that it changes everything
+    3. Restart app: python main.py
+    Expected: ALL elements should be dark/light
+    If not fixed: Delete main_v2.py, use main.py
+
+Q2: Dark mode doesn't apply everywhere?
+A2: This was the main issue - now fixed in v3.0!
+    ✅ All frames themed
+    ✅ All buttons themed
+    ✅ All inputs themed
+    ✅ All labels themed
+    ✅ Tables themed
+    ✅ Tabs themed
+    ✅ MenuBar themed
+    ✅ Everything!
+
+Q3: Why is my file count showing as 0?
+A3: You need to scan a folder first
+    Solution:
+    1. Click "🔍 SCAN FOLDER" button in sidebar
+    2. Select a folder (Downloads, Documents, etc.)
+    3. Wait for scan to complete
+    4. Stats will update
+
+Q4: Files tab is empty?
+A4: Need to scan a folder first
+    Solution: Same as Q3 - click "SCAN FOLDER"
+
+Q5: How do I organize my folder?
+A5: Use the Organization tab
+    1. Scan a folder first
+    2. Go to "📋 Organization" tab
+    3. Choose an organization method:
+       - Auto-Organize (by type)
+       - Organize by Date (YYYY/MM/DD)
+       - Find Duplicates
+       - Cleanup Empty Folders
+    4. Click button and confirm
+    5. Done!
+
+Q6: Can I delete files permanently?
+A6: Yes, with confirmation
+    Solution:
+    1. Go to Files tab
+    2. Select a file in table
+    3. Click "🗑️ Delete" button
+    4. Confirm deletion
+    5. File is deleted to Recycle Bin (Windows)
+    ⚠️ WARNING: Can't undo! Backup first if unsure
+
+Q7: How do I find duplicate files?
+A7: Use Organization tab
+    Solution:
+    1. Go to "📋 Organization" tab
+    2. Click "🔍 Find Duplicates"
+    3. Wait for scan (compares size + hash)
+    4. Results show duplicates found
+    5. You can manually delete from Files tab
+
+Q8: Cleanup Empty is not doing anything?
+A8: May not have empty folders
+    Solution:
+    1. Check if you have empty folders
+    2. Organize by Type first (creates folders)
+    3. Then some may be empty
+    4. Then Cleanup will remove them
+
+Q9: Where are my notes saved?
+A9: Locally on your computer
+    Location: C:\Users\[YourUsername]\.workspace_organizer\notes\
+    Format: JSON files with timestamps
+    Private: All data stays local, never sent anywhere
+
+Q10: Can I export/backup my notes?
+A10: Yes, manual backup
+     Solution:
+     1. Go to: C:\Users\[YourUsername]\.workspace_organizer\notes\
+     2. Copy the entire "notes" folder
+     3. Paste to backup location
+     That's it!
+
+═══════════════════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING
+
+ISSUE: App won't start
+┌─ Check Python version
+│  Solution: python --version (should be 3.8+)
+├─ Check dependencies installed
+│  Solution: python -m pip install -r requirements.txt
+├─ Check file permissions
+│  Solution: Run as Administrator
+└─ Check for errors
+   Solution: Open Command Prompt, type: python main.py
+   (will show error messages)
+
+ISSUE: Dark mode isn't fully applied
+┌─ Using old version (v2.0)
+│  Solution: Delete main_v2.py, use v3.0
+├─ Need to restart app
+│  Solution: Close and reopen app
+├─ Try toggling theme
+│  Solution: Press Ctrl+D twice
+└─ Reinstall if still broken
+   Solution: Delete main.py, restore from backup
+
+ISSUE: File scanning is slow
+┌─ Folder is too large
+│  Solution: Use smaller subfolder or organize by date first
+├─ Using network drive
+│  Solution: Use local drive instead (much faster)
+├─ Too many files shown
+│  Solution: Use filters to reduce displayed items
+└─ Computer is low on RAM
+   Solution: Close other programs
+
+ISSUE: Can't organize folder
+┌─ No folder scanned
+│  Solution: Click "SCAN FOLDER" first
+├─ Permission denied
+│  Solution: Run as Administrator
+├─ Folder is protected
+│  Solution: Choose different folder
+└─ Files in use
+   Solution: Close programs using those files
+
+ISSUE: Files tab is slow
+┌─ Too many files displayed
+│  Solution: Use search or category filter
+├─ Computer is slow
+│  Solution: Close other programs, restart app
+├─ Folder is very large
+│  Solution: Organize into smaller subfolders first
+└─ Try scrolling instead of searching
+   Solution: Table shows first 500 files
+
+ISSUE: Duplicates not found
+┌─ Duplicates don't exist
+│  Solution: Function works correctly - no dupes!
+├─ Files are similar but not identical
+│  Solution: Use file comparison tool instead
+├─ Need larger folder
+│  Solution: Try folder with known duplicates
+└─ Check results carefully
+   Solution: Results show duplicate groups
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ TESTING CHECKLIST
+
+Dark Mode (Ctrl+D):
+  □ Toggle works
+  □ All text readable
+  □ All buttons visible
+  □ All inputs visible
+  □ Tables display properly
+  □ MenuBar visible
+  □ No white/light spots in dark mode
+  □ No dark/hard-to-read in light mode
+
+File Management:
+  □ Scan folder works
+  □ File table displays files
+  □ Search filters correctly
+  □ Category filter works
+  □ Size filter works
+  □ Open file works
+  □ Delete asks for confirmation
+  □ Copy path works
+
+Organization:
+  □ Auto-organize creates folders
+  □ Date organize creates date structure
+  □ Find duplicates works
+  □ Cleanup removes empty folders
+
+General:
+  □ Dashboard updates
+  □ Notes save/load
+  □ Calendar displays
+  □ Analytics show
+  □ Menu items work
+  □ Keyboard shortcuts work
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔧 FIXING COMMON ISSUES
+
+Issue: "ModuleNotFoundError: No module named 'PyQt6'"
+Solution:
+  1. Open Command Prompt
+  2. Type: pip install PyQt6
+  3. Wait for installation
+  4. Try again: python main.py
+
+Issue: File appears to freeze when scanning large folder
+Solution:
+  1. This is normal for very large folders
+  2. Wait... app is still working!
+  3. First scan may take 1-5 minutes
+  4. Subsequent scans are faster (cached)
+  5. Cancel with Ctrl+C if needed
+
+Issue: "Permission denied" when deleting
+Solution:
+  1. Close the file/folder
+  2. Run app as Administrator
+  3. Try delete again
+
+Issue: Filter not working properly
+Solution:
+  1. Make sure you've scanned a folder
+  2. Clear search box first
+  3. Try filters one at a time
+  4. Refresh with F5
+
+Issue: Theme not changing
+Solution:
+  1. Try: Ctrl+D
+  2. Check the sidebar (should change color)
+  3. Check text colors
+  4. Restart app: python main.py
+  5. Delete file cache if present
+
+═══════════════════════════════════════════════════════════════════════════
+
+📋 VERIFICATION
+
+To verify app is working correctly:
+
+1. LAUNCH TEST
+   □ App starts without errors
+   □ Dark mode is ON
+   □ Interface is visible
+
+2. SCAN TEST
+   □ Click "SCAN FOLDER"
+   □ Select Downloads or Desktop
+   □ Wait for scan
+   □ Stats update (Files: X, Storage: X)
+
+3. FILES TAB TEST
+   □ Files appear in table
+   □ Columns show: Name, Size, Type, Modified, Path
+   □ Search filters files
+   □ Category filter works
+   □ Size filter works
+
+4. ORGANIZATION TEST
+   □ Go to Organization tab
+   □ See 6 buttons
+   □ Click one (e.g., Find Duplicates)
+   □ Operation completes
+
+5. THEME TEST
+   □ Press Ctrl+D
+   □ Everything changes to light mode
+   □ Press Ctrl+D again
+   □ Everything changes back to dark
+
+If all tests pass: ✅ App is working perfectly!
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANT WARNINGS
+
+DO NOT:
+  ❌ Delete files from system folders
+  ❌ Organize system folders (C:\Windows)
+  ❌ Trust organization without backup
+  ❌ Delete files you're unsure about
+  ❌ Run on folders with active files
+  ❌ Close app during operations
+  ❌ Scan same folder repeatedly (restart app)
+
+ALWAYS:
+  ✅ Backup important files first
+  ✅ Test on non-critical folder
+  ✅ Review files before organizing
+  ✅ Confirm all operations
+  ✅ Check results after organizing
+  ✅ Keep app running until done
+  ✅ Use keyboard shortcuts wisely
+
+═══════════════════════════════════════════════════════════════════════════
+
+💻 SYSTEM REQUIREMENTS
+
+Minimum:
+  • Windows 10 or Windows 11
+  • Python 3.8+
+  • 2GB RAM
+  • 500MB free disk space
+
+Recommended:
+  • Windows 10/11 (latest)
+  • Python 3.10+
+  • 8GB RAM
+  • 1GB free disk space
+  • Local SSD (not network drive)
+
+Dependencies:
+  • PyQt6 6.6.1
+  • PyQt6-Qt6 6.6.1
+  • PyQt6-sip 13.6.0
+  • python-dateutil 2.8.2
+  • Pillow 10.1.0
+
+═══════════════════════════════════════════════════════════════════════════
+
+📞 SUPPORT
+
+For issues:
+  1. Check this troubleshooting guide
+  2. Check QUICK_REFERENCE_v3.txt
+  3. Check IMPROVEMENTS_v3.0.txt
+  4. Check README_v3.0.txt
+
+For bugs or feature requests:
+  • Try restarting the app
+  • Verify you're using v3.0
+  • Backup your data
+  • Run as Administrator
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎉 YOU'RE READY!
+
+If you've verified the app works:
+  ✅ Dark mode is perfect
+  ✅ File management is powerful
+  ✅ Organization is functional
+  ✅ Everything is themed
+
+Congratulations! 🎊
+
+Start organizing your files now! 🚀
+
+═══════════════════════════════════════════════════════════════════════════

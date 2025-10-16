@@ -111,6 +111,20 @@ class WorkspaceOrganizer(QMainWindow):
         }
         self.today_date = datetime.now().date()
         
+        # Settings
+        self.settings = {
+            'enable_notifications': True,
+            'enable_sound': True,
+            'sound_volume': 100,
+            'default_folder': str(Path.home() / "Desktop"),
+            'auto_save_notes': True,
+            'pomodoro_work_minutes': 25,
+            'pomodoro_break_minutes': 5,
+            'theme': 'dark'
+        }
+        self.settings_file = 'settings.json'
+        self.load_settings()
+        
         # Setup UI
         self.setup_menu_bar()
         self.setup_ui()
@@ -174,6 +188,12 @@ class WorkspaceOrganizer(QMainWindow):
         
         cleanup_action = tools_menu.addAction("🧹 Cleanup")
         cleanup_action.triggered.connect(self.cleanup_dialog)
+        
+        tools_menu.addSeparator()
+        
+        settings_action = tools_menu.addAction("⚙️ Settings")
+        settings_action.triggered.connect(self.show_settings_dialog)
+        settings_action.setShortcut("Ctrl+,")
         
         # Export menu
         export_menu = menubar.addMenu("💾 Export")
@@ -2100,6 +2120,151 @@ END:VEVENT
             QMessageBox.information(self, "Export Success", f"Calendar exported to:\n{file_path}")
         except Exception as e:
             QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
+    
+    def load_settings(self):
+        """Load settings from file"""
+        try:
+            if os.path.exists(self.settings_file):
+                with open(self.settings_file, 'r') as f:
+                    saved_settings = json.load(f)
+                    self.settings.update(saved_settings)
+        except Exception as e:
+            print(f"Warning: Could not load settings: {e}")
+    
+    def save_settings(self):
+        """Save settings to file"""
+        try:
+            with open(self.settings_file, 'w') as f:
+                json.dump(self.settings, f, indent=4)
+        except Exception as e:
+            print(f"Warning: Could not save settings: {e}")
+    
+    def show_settings_dialog(self):
+        """Show settings dialog"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Settings")
+        dialog.setGeometry(100, 100, 500, 400)
+        
+        # Set dialog style
+        dialog.setStyleSheet(f"""
+            QDialog {{
+                background-color: {'#1e1e1e' if self.dark_mode else 'white'};
+                color: {'#e0e0e0' if self.dark_mode else '#333'};
+            }}
+            QLabel {{
+                color: {'#e0e0e0' if self.dark_mode else '#333'};
+            }}
+            QCheckBox {{
+                color: {'#e0e0e0' if self.dark_mode else '#333'};
+            }}
+            QSpinBox, QDoubleSpinBox, QLineEdit {{
+                background-color: {'#2d2d2d' if self.dark_mode else '#f9f9f9'};
+                color: {'#e0e0e0' if self.dark_mode else '#333'};
+                border: 1px solid {'#444' if self.dark_mode else '#ddd'};
+                padding: 5px;
+                border-radius: 3px;
+            }}
+            QPushButton {{
+                background-color: #0066cc;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 3px;
+            }}
+            QPushButton:hover {{
+                background-color: #0052a3;
+            }}
+        """)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Notifications section
+        layout.addWidget(QLabel("🔔 Notifications & Sound"))
+        notify_cb = QCheckBox("Enable notifications")
+        notify_cb.setChecked(self.settings['enable_notifications'])
+        layout.addWidget(notify_cb)
+        
+        sound_cb = QCheckBox("Enable sound")
+        sound_cb.setChecked(self.settings['enable_sound'])
+        layout.addWidget(sound_cb)
+        
+        volume_layout = QHBoxLayout()
+        volume_layout.addWidget(QLabel("Sound volume (%)"))
+        volume_spin = QSpinBox()
+        volume_spin.setMinimum(0)
+        volume_spin.setMaximum(100)
+        volume_spin.setValue(self.settings['sound_volume'])
+        volume_layout.addWidget(volume_spin)
+        volume_layout.addStretch()
+        layout.addLayout(volume_layout)
+        
+        layout.addSpacing(20)
+        
+        # Pomodoro settings
+        layout.addWidget(QLabel("⏱️ Pomodoro Timer"))
+        work_layout = QHBoxLayout()
+        work_layout.addWidget(QLabel("Work duration (minutes)"))
+        work_spin = QSpinBox()
+        work_spin.setMinimum(1)
+        work_spin.setMaximum(60)
+        work_spin.setValue(self.settings['pomodoro_work_minutes'])
+        work_layout.addWidget(work_spin)
+        work_layout.addStretch()
+        layout.addLayout(work_layout)
+        
+        break_layout = QHBoxLayout()
+        break_layout.addWidget(QLabel("Break duration (minutes)"))
+        break_spin = QSpinBox()
+        break_spin.setMinimum(1)
+        break_spin.setMaximum(30)
+        break_spin.setValue(self.settings['pomodoro_break_minutes'])
+        break_layout.addWidget(break_spin)
+        break_layout.addStretch()
+        layout.addLayout(break_layout)
+        
+        layout.addSpacing(20)
+        
+        # File management
+        layout.addWidget(QLabel("📁 File Management"))
+        autosave_cb = QCheckBox("Auto-save notes")
+        autosave_cb.setChecked(self.settings['auto_save_notes'])
+        layout.addWidget(autosave_cb)
+        
+        layout.addStretch()
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        save_btn = QPushButton("💾 Save")
+        save_btn.clicked.connect(lambda: self.save_settings_from_dialog(
+            dialog, notify_cb, sound_cb, volume_spin, work_spin, break_spin, autosave_cb
+        ))
+        button_layout.addWidget(save_btn)
+        
+        close_btn = QPushButton("❌ Close")
+        close_btn.clicked.connect(dialog.close)
+        button_layout.addWidget(close_btn)
+        
+        layout.addLayout(button_layout)
+        
+        dialog.exec()
+    
+    def save_settings_from_dialog(self, dialog, notify_cb, sound_cb, volume_spin, work_spin, break_spin, autosave_cb):
+        """Save settings from dialog"""
+        self.settings['enable_notifications'] = notify_cb.isChecked()
+        self.settings['enable_sound'] = sound_cb.isChecked()
+        self.settings['sound_volume'] = volume_spin.value()
+        self.settings['pomodoro_work_minutes'] = work_spin.value()
+        self.settings['pomodoro_break_minutes'] = break_spin.value()
+        self.settings['auto_save_notes'] = autosave_cb.isChecked()
+        
+        # Update pomodoro timer with new settings
+        self.pomodoro.work_duration = self.settings['pomodoro_work_minutes'] * 60
+        self.pomodoro.break_duration = self.settings['pomodoro_break_minutes'] * 60
+        
+        self.save_settings()
+        QMessageBox.information(self, "Settings", "Settings saved successfully!")
+        dialog.close()
     
     def show_about(self):
         """Show about dialog"""

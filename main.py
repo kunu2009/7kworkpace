@@ -52,20 +52,22 @@ class PomodoroTimer:
 
 
 class TodoItem:
-    """Todo item with title and completion status"""
+    """Todo item with title, completion status, and pinning"""
     def __init__(self, title, priority="Normal"):
         self.title = title
         self.priority = priority
         self.completed = False
         self.created_date = datetime.now()
+        self.is_pinned = False  # NEW: Pin/star functionality
 
 
 class KanbanTask:
-    """Kanban task with status"""
+    """Kanban task with status, priority, and pinning"""
     def __init__(self, title, status="To Do", priority="Normal"):
         self.title = title
         self.status = status  # To Do, In Progress, Done
         self.priority = priority
+        self.is_pinned = False  # NEW: Pin/star functionality
 
 
 class WorkspaceOrganizer(QMainWindow):
@@ -94,6 +96,18 @@ class WorkspaceOrganizer(QMainWindow):
         self.search_history = []  # Store last 10 searches
         self.search_results = []  # Current search results
         self.max_history = 10
+        
+        # Statistics tracking
+        self.stats = {
+            'files_organized_today': 0,
+            'tasks_completed': 0,
+            'pomodoro_sessions': 0,
+            'pomodoro_hours': 0,
+            'current_streak': 0,
+            'total_files_organized': 0,
+            'total_tasks_completed': 0
+        }
+        self.today_date = datetime.now().date()
         
         # Setup UI
         self.setup_menu_bar()
@@ -208,6 +222,10 @@ class WorkspaceOrganizer(QMainWindow):
         # Ctrl+F: Focus search (NEW)
         shortcut_search = QShortcut(QKeySequence("Ctrl+F"), self)
         shortcut_search.activated.connect(self.focus_search_input)
+        
+        # Ctrl+P: Pin/Unpin selected item
+        shortcut_pin = QShortcut(QKeySequence("Ctrl+P"), self)
+        shortcut_pin.activated.connect(self.pin_current_item)
     
     def focus_todo_input(self):
         """Focus on todo input field (Ctrl+N)"""
@@ -251,6 +269,24 @@ class WorkspaceOrganizer(QMainWindow):
             if hasattr(self, 'search_input'):
                 self.search_input.setFocus()
                 self.search_input.selectAll()
+        except:
+            pass
+    
+    def pin_current_item(self):
+        """Pin/unpin the currently selected item based on active tab (Ctrl+P)"""
+        try:
+            current_tab_index = self.tabs.currentIndex()
+            current_tab_text = self.tabs.tabText(current_tab_index)
+            
+            if "Todo" in current_tab_text and hasattr(self, 'todo_list'):
+                self.pin_todo()
+            elif "Kanban" in current_tab_text:
+                # Pin the currently selected item in the active kanban column
+                for column in [self.kanban_todo_list, self.kanban_progress_list, self.kanban_done_list]:
+                    list_widget = getattr(column, 'list_widget', None)
+                    if list_widget and list_widget.hasFocus():
+                        self.pin_kanban_task(list_widget)
+                        return
         except:
             pass
     
@@ -887,14 +923,25 @@ class WorkspaceOrganizer(QMainWindow):
         
         # Todo list display
         self.todo_list = QListWidget()
+        self.todo_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.todo_list.customContextMenuRequested.connect(self.show_todo_context_menu)
         self.update_todo_list_display()
         layout.addWidget(self.todo_list)
         
-        # Delete selected button
+        # Control buttons layout
+        btn_layout = QHBoxLayout()
+        
+        pin_btn = QPushButton("📌 Pin Selected")
+        pin_btn.clicked.connect(self.pin_todo)
+        pin_btn.setStyleSheet("background-color: #f59e0b; color: white; border: none; border-radius: 5px; padding: 8px 16px; font-weight: bold;")
+        btn_layout.addWidget(pin_btn)
+        
         delete_btn = QPushButton("🗑️ Delete Selected")
         delete_btn.clicked.connect(self.delete_todo)
         delete_btn.setStyleSheet("background-color: #ef4444; color: white; border: none; border-radius: 5px; padding: 8px 16px; font-weight: bold;")
-        layout.addWidget(delete_btn)
+        btn_layout.addWidget(delete_btn)
+        
+        layout.addLayout(btn_layout)
         
         return widget
     
@@ -913,13 +960,78 @@ class WorkspaceOrganizer(QMainWindow):
             self.todos.pop(current)
             self.update_todo_list_display()
     
+    def delete_kanban_task(self, column_list):
+        """Delete selected kanban task"""
+        current = column_list.currentRow()
+        if current >= 0 and column_list.item(current):
+            original_index = column_list.item(current).data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.kanban_tasks):
+                self.kanban_tasks.pop(original_index)
+                self.update_kanban_display()
+    
+    def toggle_todo_complete(self, item):
+        """Toggle todo completion when clicked (double-click)"""
+        current = self.todo_list.row(item)
+        if current >= 0 and current < len(self.todos):
+            self.todos[current].completed = not self.todos[current].completed
+            if self.todos[current].completed:
+                self.increment_tasks_completed()
+            self.update_todo_list_display()
+    
     def update_todo_list_display(self):
-        """Update todo list display"""
+        """Update todo list display with pinned items at top"""
         self.todo_list.clear()
-        for i, todo in enumerate(self.todos):
-            item_text = f"{'✓' if todo.completed else '○'} {todo.title}"
+        self.todo_list.itemDoubleClicked.disconnect() if self.todo_list.receivers(self.todo_list.itemDoubleClicked) > 0 else None
+        
+        # Sort: pinned items first, then regular items
+        pinned_todos = [t for t in self.todos if t.is_pinned]
+        regular_todos = [t for t in self.todos if not t.is_pinned]
+        sorted_todos = pinned_todos + regular_todos
+        
+        for i, todo in enumerate(sorted_todos):
+            pin_icon = "📌" if todo.is_pinned else "  "
+            complete_icon = "✓" if todo.completed else "○"
+            item_text = f"{pin_icon} {complete_icon} {todo.title}"
             item = QListWidgetItem(item_text)
+            item.setData(Qt.ItemDataRole.UserRole, self.todos.index(todo))  # Store original index
             self.todo_list.addItem(item)
+        
+        self.todo_list.itemDoubleClicked.connect(self.toggle_todo_complete)
+    
+    def pin_todo(self):
+        """Pin/unpin selected todo"""
+        current = self.todo_list.currentRow()
+        if current >= 0 and self.todo_list.item(current):
+            original_index = self.todo_list.item(current).data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.todos):
+                self.todos[original_index].is_pinned = not self.todos[original_index].is_pinned
+                self.update_todo_list_display()
+    
+    def show_todo_context_menu(self, pos):
+        """Show right-click context menu for todos"""
+        item = self.todo_list.itemAt(pos)
+        if not item:
+            return
+        
+        menu = QMenu()
+        
+        # Pin/Unpin action
+        current = self.todo_list.row(item)
+        if current >= 0:
+            original_index = item.data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.todos):
+                is_pinned = self.todos[original_index].is_pinned
+                pin_action = menu.addAction("📌 Unpin" if is_pinned else "📌 Pin")
+                pin_action.triggered.connect(self.pin_todo)
+        
+        menu.addSeparator()
+        
+        # Delete action
+        delete_action = menu.addAction("🗑️ Delete")
+        delete_action.triggered.connect(self.delete_todo)
+        
+        menu.exec(self.todo_list.mapToGlobal(pos))
+    
     
     def create_kanban_tab(self):
         """Create Kanban board tab"""
@@ -1007,6 +1119,10 @@ class WorkspaceOrganizer(QMainWindow):
         # Store the list widget in the frame for easy access
         frame.list_widget = list_widget
         
+        # Enable context menu for right-click
+        list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        list_widget.customContextMenuRequested.connect(lambda pos: self.show_kanban_context_menu(pos, list_widget))
+        
         return frame
     
     def add_kanban_task(self):
@@ -1019,7 +1135,7 @@ class WorkspaceOrganizer(QMainWindow):
             self.update_kanban_display()
     
     def update_kanban_display(self):
-        """Update Kanban board display"""
+        """Update Kanban board display with pinned items at top"""
         # Get the list widgets from the stored references
         todo_list = getattr(self.kanban_todo_list, 'list_widget', None)
         progress_list = getattr(self.kanban_progress_list, 'list_widget', None)
@@ -1033,9 +1149,11 @@ class WorkspaceOrganizer(QMainWindow):
         if done_list:
             done_list.clear()
         
-        # Add tasks to appropriate columns
+        # Add tasks to appropriate columns (pinned first)
         for task in self.kanban_tasks:
-            task_item = QListWidgetItem(f"📋 {task.title}")
+            pin_icon = "📌" if task.is_pinned else "  "
+            task_item = QListWidgetItem(f"{pin_icon} 📋 {task.title}")
+            task_item.setData(Qt.ItemDataRole.UserRole, self.kanban_tasks.index(task))
             
             if task.status == "To Do" and todo_list:
                 todo_list.addItem(task_item)
@@ -1043,6 +1161,59 @@ class WorkspaceOrganizer(QMainWindow):
                 progress_list.addItem(task_item)
             elif task.status == "Done" and done_list:
                 done_list.addItem(task_item)
+        
+        # Re-sort each column to put pinned items first
+        for list_widget in [todo_list, progress_list, done_list]:
+            if list_widget:
+                self._sort_kanban_column(list_widget)
+    
+    def _sort_kanban_column(self, column_list):
+        """Sort a kanban column to put pinned items first"""
+        items = []
+        for i in range(column_list.count()):
+            item = column_list.takeItem(0)
+            items.append(item)
+        
+        # Sort: pinned items first
+        pinned = [item for item in items if item.text().startswith("📌")]
+        unpinned = [item for item in items if not item.text().startswith("📌")]
+        
+        for item in pinned + unpinned:
+            column_list.addItem(item)
+    
+    def pin_kanban_task(self, column_list):
+        """Pin/unpin selected kanban task"""
+        current = column_list.currentRow()
+        if current >= 0 and column_list.item(current):
+            original_index = column_list.item(current).data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.kanban_tasks):
+                self.kanban_tasks[original_index].is_pinned = not self.kanban_tasks[original_index].is_pinned
+                self.update_kanban_display()
+    
+    def show_kanban_context_menu(self, pos, column_list):
+        """Show right-click context menu for kanban tasks"""
+        item = column_list.itemAt(pos)
+        if not item:
+            return
+        
+        menu = QMenu()
+        
+        # Pin/Unpin action
+        current = column_list.row(item)
+        if current >= 0:
+            original_index = item.data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.kanban_tasks):
+                is_pinned = self.kanban_tasks[original_index].is_pinned
+                pin_action = menu.addAction("📌 Unpin" if is_pinned else "📌 Pin")
+                pin_action.triggered.connect(lambda: self.pin_kanban_task(column_list))
+        
+        menu.addSeparator()
+        
+        # Delete action
+        delete_action = menu.addAction("🗑️ Delete")
+        delete_action.triggered.connect(lambda: self.delete_kanban_task(column_list))
+        
+        menu.exec(column_list.mapToGlobal(pos))
     
     def create_pomodoro_tab(self):
         """Create Pomodoro timer tab"""
@@ -1138,13 +1309,17 @@ class WorkspaceOrganizer(QMainWindow):
         elif self.pomodoro.is_running and self.pomodoro.remaining == 0:
             # Switch between work and break
             if self.pomodoro.is_work:
+                # Work session completed - track it
+                self.increment_pomodoro_sessions()
+                
                 self.pomodoro.is_work = False
                 self.pomodoro.remaining = self.pomodoro.break_duration
-                QMessageBox.information(self, "Break Time!", "Take a 5-minute break!")
+                QMessageBox.information(self, "Session Complete! 🎉", 
+                    f"Great work! Take a 5-minute break.\n\nToday's Sessions: {self.stats['pomodoro_sessions']}")
             else:
                 self.pomodoro.is_work = True
                 self.pomodoro.remaining = self.pomodoro.work_duration
-                QMessageBox.information(self, "Back to Work!", "Time for another 25-minute session!")
+                QMessageBox.information(self, "Break Over! 💪", "Time for another 25-minute session!")
             self.update_pomodoro_display()
     
     def update_pomodoro_display(self):
@@ -1552,9 +1727,18 @@ class WorkspaceOrganizer(QMainWindow):
             return
         
         try:
+            # Count files before organization
+            files_count = len(self.all_files)
+            
             self.file_manager.organize_by_type(self.current_folder)
-            QMessageBox.information(self, "Success", "Files organized by type!")
+            
+            # Track organization
+            self.stats['files_organized_today'] += files_count
+            self.stats['total_files_organized'] += files_count
+            
+            QMessageBox.information(self, "Success", f"Files organized by type! ({files_count} files)")
             self.scan_folder_auto(self.current_folder)
+            self.update_statistics_display()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Organization failed: {e}")
     
@@ -1565,9 +1749,18 @@ class WorkspaceOrganizer(QMainWindow):
             return
         
         try:
+            # Count files before organization
+            files_count = len(self.all_files)
+            
             self.file_manager.organize_by_date(self.current_folder)
-            QMessageBox.information(self, "Success", "Files organized by date!")
+            
+            # Track organization
+            self.stats['files_organized_today'] += files_count
+            self.stats['total_files_organized'] += files_count
+            
+            QMessageBox.information(self, "Success", f"Files organized by date! ({files_count} files)")
             self.scan_folder_auto(self.current_folder)
+            self.update_statistics_display()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Organization failed: {e}")
     
@@ -1657,10 +1850,70 @@ class WorkspaceOrganizer(QMainWindow):
         self.file_count_label.setText(f"📁 Files: {file_count}")
         self.storage_label.setText(f"💾 Storage: {storage_display}")
         
+        # Update statistics cards with current data
+        self.file_stat_card = self.create_stat_card("📁 Files Scanned", str(file_count))
+        self.storage_stat_card = self.create_stat_card("💾 Storage Used", storage_display)
+        self.notes_stat_card = self.create_stat_card("📝 Tasks Completed", f"{self.stats['tasks_completed']}")
+        self.types_stat_card = self.create_stat_card("🔥 Current Streak", f"{self.stats['current_streak']} days")
+        
         # Update recent files
         self.recent_files_list.clear()
         for file_info in self.all_files[:10]:
             self.recent_files_list.addItem(f"📄 {file_info['name']}")
+    
+    def update_statistics_display(self):
+        """Update the statistics display on dashboard"""
+        try:
+            # Calculate today's stats
+            tasks_completed = len([t for t in self.todos if t.completed])
+            
+            # Update stat cards if they exist
+            if hasattr(self, 'file_stat_card'):
+                self.file_stat_card = self.create_stat_card("📁 Today's Files", f"{self.stats['files_organized_today']}")
+            if hasattr(self, 'storage_stat_card'):
+                self.storage_stat_card = self.create_stat_card("✓ Tasks Done", f"{tasks_completed}")
+            if hasattr(self, 'notes_stat_card'):
+                self.notes_stat_card = self.create_stat_card("🍅 Pomodoro", f"{self.stats['pomodoro_sessions']}")
+            if hasattr(self, 'types_stat_card'):
+                self.types_stat_card = self.create_stat_card("🔥 Streak", f"{self.stats['current_streak']}")
+        except:
+            pass
+    
+    def increment_tasks_completed(self):
+        """Increment task completion counter"""
+        self.stats['tasks_completed'] += 1
+        self.stats['total_tasks_completed'] += 1
+        self.update_statistics_display()
+    
+    def increment_pomodoro_sessions(self):
+        """Increment pomodoro counter when session completes"""
+        self.stats['pomodoro_sessions'] += 1
+        self.stats['pomodoro_hours'] += 0.42  # 25 mins ≈ 0.42 hours
+        self.update_statistics_display()
+    
+    def increment_files_organized(self):
+        """Increment files organized counter"""
+        self.stats['files_organized_today'] += 1
+        self.stats['total_files_organized'] += 1
+        self.update_statistics_display()
+    
+    def update_streak(self):
+        """Update current streak (called daily)"""
+        current_date = datetime.now().date()
+        if current_date > self.today_date:
+            # New day - check if streak should continue
+            if self.stats['tasks_completed'] > 0 or self.stats['pomodoro_sessions'] > 0:
+                self.stats['current_streak'] += 1
+            else:
+                self.stats['current_streak'] = 0
+            
+            # Reset daily counters
+            self.today_date = current_date
+            self.stats['files_organized_today'] = 0
+            self.stats['tasks_completed'] = 0
+            self.stats['pomodoro_sessions'] = 0
+        
+        self.update_statistics_display()
     
     def update_time(self):
         """Update current time display"""

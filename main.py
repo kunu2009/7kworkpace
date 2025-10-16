@@ -22,7 +22,8 @@ try:
         QFrame, QListWidget, QListWidgetItem, QTextEdit, QCalendarWidget,
         QTabWidget, QPlainTextEdit, QMessageBox, QComboBox, QMenuBar, QMenu,
         QProgressBar, QSpinBox, QCheckBox, QDialog, QTableWidget, QTableWidgetItem,
-        QHeaderView, QDoubleSpinBox, QTreeWidget, QTreeWidgetItem, QProgressBar
+        QHeaderView, QDoubleSpinBox, QTreeWidget, QTreeWidgetItem, QProgressBar,
+        QSystemTrayIcon
     )
     from PyQt6.QtCore import Qt, QDate, QSize, QTimer, pyqtSignal, QThread, QDateTime, QTime
     from PyQt6.QtGui import QIcon, QFont, QColor, QPixmap, QImage, QLinearGradient, QKeySequence, QShortcut
@@ -130,6 +131,7 @@ class WorkspaceOrganizer(QMainWindow):
         self.setup_ui()
         self.apply_styles()
         self.setup_keyboard_shortcuts()
+        self.setup_system_tray()
         
         # Load initial data - default to Desktop
         desktop_path = str(Path.home() / "Desktop")
@@ -265,6 +267,94 @@ class WorkspaceOrganizer(QMainWindow):
         # Ctrl+P: Pin/Unpin selected item
         shortcut_pin = QShortcut(QKeySequence("Ctrl+P"), self)
         shortcut_pin.activated.connect(self.pin_current_item)
+    
+    def setup_system_tray(self):
+        """Setup system tray icon"""
+        try:
+            # Create tray icon
+            self.tray_icon = QSystemTrayIcon(self)
+            
+            # Try to create a simple icon (use a text-based approach)
+            icon_pixmap = QPixmap(16, 16)
+            icon_pixmap.fill(QColor("#0066cc"))
+            self.tray_icon.setIcon(QIcon(icon_pixmap))
+            
+            # Create tray menu
+            tray_menu = QMenu()
+            
+            # Show/Hide action
+            show_action = tray_menu.addAction("👁️ Show")
+            show_action.triggered.connect(self.show_window)
+            
+            hide_action = tray_menu.addAction("👁️ Hide")
+            hide_action.triggered.connect(self.hide_to_tray)
+            
+            tray_menu.addSeparator()
+            
+            # Quick actions
+            new_todo_action = tray_menu.addAction("📝 New Todo")
+            new_todo_action.triggered.connect(self.focus_todo_input)
+            
+            new_kanban_action = tray_menu.addAction("📌 New Task")
+            new_kanban_action.triggered.connect(self.focus_kanban_input)
+            
+            tray_menu.addSeparator()
+            
+            # Statistics
+            stats_action = tray_menu.addAction("📊 Statistics")
+            stats_action.triggered.connect(self.show_tray_stats)
+            
+            tray_menu.addSeparator()
+            
+            # Exit action
+            exit_action = tray_menu.addAction("❌ Exit")
+            exit_action.triggered.connect(self.close)
+            
+            self.tray_icon.setContextMenu(tray_menu)
+            
+            # Connect activation signals
+            self.tray_icon.activated.connect(self.tray_icon_activated)
+            
+            # Show the tray icon
+            self.tray_icon.show()
+        except Exception as e:
+            print(f"Warning: System tray not available: {e}")
+    
+    def tray_icon_activated(self, reason):
+        """Handle tray icon activation"""
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            if self.isVisible():
+                self.hide()
+            else:
+                self.show_window()
+    
+    def show_window(self):
+        """Show the main window"""
+        self.showNormal()
+        self.activateWindow()
+    
+    def hide_to_tray(self):
+        """Hide the main window to tray"""
+        self.hide()
+    
+    def show_tray_stats(self):
+        """Show statistics in a tray notification"""
+        try:
+            stats_text = f"""📊 Today's Statistics:
+            
+Files organized: {self.stats['files_organized_today']}
+Tasks completed: {self.stats['tasks_completed']}
+Pomodoro sessions: {self.stats['pomodoro_sessions']}
+Streak: {self.stats['current_streak']} days"""
+            
+            self.tray_icon.showMessage(
+                "Workspace Organizer",
+                stats_text,
+                QSystemTrayIcon.MessageIcon.Information,
+                5000
+            )
+        except Exception as e:
+            print(f"Warning: Could not show tray notification: {e}")
     
     def focus_todo_input(self):
         """Focus on todo input field (Ctrl+N)"""

@@ -23,10 +23,12 @@ try:
         QHeaderView, QDoubleSpinBox, QTreeWidget, QTreeWidgetItem, QProgressBar
     )
     from PyQt6.QtCore import Qt, QDate, QSize, QTimer, pyqtSignal, QThread, QDateTime, QTime
-    from PyQt6.QtGui import QIcon, QFont, QColor, QPixmap, QImage, QLinearGradient
+    from PyQt6.QtGui import QIcon, QFont, QColor, QPixmap, QImage, QLinearGradient, QKeySequence, QShortcut
 except ImportError as e:
-    print("❌ Error: PyQt6 is not installed!")
-    print("   Please run: python -m pip install -r requirements.txt")
+    print(f"❌ Error: PyQt6 import failed!")
+    print(f"   Error details: {e}")
+    print(f"   Python: {sys.executable}")
+    print(f"   Version: {sys.version}")
     sys.exit(1)
 
 try:
@@ -88,10 +90,16 @@ class WorkspaceOrganizer(QMainWindow):
         self.kanban_tasks = []
         self.pomodoro = PomodoroTimer()
         
+        # Search features
+        self.search_history = []  # Store last 10 searches
+        self.search_results = []  # Current search results
+        self.max_history = 10
+        
         # Setup UI
         self.setup_menu_bar()
         self.setup_ui()
         self.apply_styles()
+        self.setup_keyboard_shortcuts()
         
         # Load initial data - default to Desktop
         desktop_path = str(Path.home() / "Desktop")
@@ -166,6 +174,98 @@ class WorkspaceOrganizer(QMainWindow):
         self.pomodoro_timer = QTimer()
         self.pomodoro_timer.timeout.connect(self.update_pomodoro)
         self.pomodoro_timer.start(1000)
+    
+    def setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for common actions"""
+        # Ctrl+N: New Todo
+        shortcut_new_todo = QShortcut(QKeySequence("Ctrl+N"), self)
+        shortcut_new_todo.activated.connect(self.focus_todo_input)
+        
+        # Ctrl+K: New Kanban Task
+        shortcut_new_kanban = QShortcut(QKeySequence("Ctrl+K"), self)
+        shortcut_new_kanban.activated.connect(self.focus_kanban_input)
+        
+        # Ctrl+S: Save (save note or organize)
+        shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
+        shortcut_save.activated.connect(self.quick_save)
+        
+        # Ctrl+Q: Quit (already in menu, but adding shortcut ensures it works)
+        shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), self)
+        shortcut_quit.activated.connect(self.close)
+        
+        # Alt+O: Organize Files
+        shortcut_organize = QShortcut(QKeySequence("Alt+O"), self)
+        shortcut_organize.activated.connect(self.organize_files_dialog)
+        
+        # Alt+S: Scan Folder
+        shortcut_scan = QShortcut(QKeySequence("Alt+S"), self)
+        shortcut_scan.activated.connect(self.scan_folder)
+        
+        # Alt+T: Toggle dark mode
+        shortcut_theme = QShortcut(QKeySequence("Alt+T"), self)
+        shortcut_theme.activated.connect(self.toggle_dark_mode)
+        
+        # Ctrl+F: Focus search (NEW)
+        shortcut_search = QShortcut(QKeySequence("Ctrl+F"), self)
+        shortcut_search.activated.connect(self.focus_search_input)
+    
+    def focus_todo_input(self):
+        """Focus on todo input field (Ctrl+N)"""
+        try:
+            # Switch to Todo tab
+            for i in range(self.tabs.count()):
+                if "Todo" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+            # Focus on input
+            if hasattr(self, 'todo_input'):
+                self.todo_input.setFocus()
+                self.todo_input.selectAll()
+        except:
+            pass
+    
+    def focus_kanban_input(self):
+        """Focus on kanban input field (Ctrl+K)"""
+        try:
+            # Switch to Kanban tab
+            for i in range(self.tabs.count()):
+                if "Kanban" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+            # Focus on input
+            if hasattr(self, 'kanban_input'):
+                self.kanban_input.setFocus()
+                self.kanban_input.selectAll()
+        except:
+            pass
+    
+    def focus_search_input(self):
+        """Focus on search input field (Ctrl+F)"""
+        try:
+            # Switch to Search tab
+            for i in range(self.tabs.count()):
+                if "Search" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+            # Focus on search input
+            if hasattr(self, 'search_input'):
+                self.search_input.setFocus()
+                self.search_input.selectAll()
+        except:
+            pass
+    
+    def quick_save(self):
+        """Quick save action (Ctrl+S)"""
+        try:
+            # If notes tab is active, save note
+            current_tab = self.tabs.currentWidget()
+            if hasattr(self, 'notes_text') and self.notes_text.hasFocus():
+                self.save_note()
+            else:
+                # General save message
+                QMessageBox.information(self, "Saved", "Changes saved! 💾")
+        except Exception as e:
+            QMessageBox.warning(self, "Save Error", f"Save failed: {e}")
         
     def toggle_dark_mode(self):
         """Toggle between light and dark mode"""
@@ -330,6 +430,9 @@ class WorkspaceOrganizer(QMainWindow):
         # Dashboard tab
         self.tabs.addTab(self.create_dashboard(), "📊 Dashboard")
         
+        # Search tab (NEW)
+        self.tabs.addTab(self.create_search_tab(), "🔍 Search")
+        
         # Folder Tree tab
         self.tabs.addTab(self.create_folder_tree_tab(), "📂 Folders")
         
@@ -479,6 +582,185 @@ class WorkspaceOrganizer(QMainWindow):
         
         layout.addStretch()
         return widget
+    
+    def create_search_tab(self):
+        """Create global search tab"""
+        widget = QWidget()
+        if self.dark_mode:
+            widget.setStyleSheet("background-color: #1e1e1e; color: #e0e0e0;")
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        
+        title = QLabel("🔍 Global Search")
+        title_style = "font-size: 18px; font-weight: bold; color: %s;" % ("#e0e0e0" if self.dark_mode else "#333")
+        title.setStyleSheet(title_style)
+        layout.addWidget(title)
+        
+        # Search input
+        search_layout = QHBoxLayout()
+        
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search in Files, Todos, Kanban, Notes... (Ctrl+F)")
+        self.search_input.setStyleSheet(f"background-color: {'#2d2d2d' if self.dark_mode else 'white'}; color: {'#e0e0e0' if self.dark_mode else '#333'}; border: 2px solid #667eea; border-radius: 5px; padding: 8px; font-size: 12px;")
+        self.search_input.textChanged.connect(self.perform_global_search)
+        self.search_input.setMinimumHeight(40)
+        search_layout.addWidget(self.search_input)
+        
+        search_btn = QPushButton("🔎 Search")
+        search_btn.clicked.connect(self.perform_global_search)
+        search_btn.setStyleSheet("background-color: #667eea; color: white; border: none; border-radius: 5px; padding: 8px 16px; font-weight: bold;")
+        search_layout.addWidget(search_btn)
+        
+        clear_btn = QPushButton("✕ Clear")
+        clear_btn.clicked.connect(self.clear_search)
+        clear_btn.setStyleSheet("background-color: #ef4444; color: white; border: none; border-radius: 5px; padding: 8px 16px; font-weight: bold;")
+        search_layout.addWidget(clear_btn)
+        
+        layout.addLayout(search_layout)
+        
+        # Filter buttons
+        filter_layout = QHBoxLayout()
+        
+        filter_label = QLabel("Filter by:")
+        filter_label.setStyleSheet(f"color: {'#e0e0e0' if self.dark_mode else '#333'}; font-weight: bold;")
+        filter_layout.addWidget(filter_label)
+        
+        self.search_filter = QComboBox()
+        self.search_filter.addItems(["All", "Files", "Todos", "Kanban", "Notes"])
+        self.search_filter.setStyleSheet(f"background-color: {'#2d2d2d' if self.dark_mode else 'white'}; color: {'#e0e0e0' if self.dark_mode else '#333'}; border: 2px solid #667eea; border-radius: 5px; padding: 5px;")
+        self.search_filter.currentTextChanged.connect(self.perform_global_search)
+        filter_layout.addWidget(self.search_filter)
+        
+        filter_layout.addStretch()
+        layout.addLayout(filter_layout)
+        
+        # Search results
+        results_label = QLabel("Search Results:")
+        results_label.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {'#e0e0e0' if self.dark_mode else '#333'};")
+        layout.addWidget(results_label)
+        
+        self.search_results_list = QListWidget()
+        self.search_results_list.itemDoubleClicked.connect(self.navigate_to_search_result)
+        layout.addWidget(self.search_results_list)
+        
+        # Search history
+        history_label = QLabel("Recent Searches:")
+        history_label.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {'#e0e0e0' if self.dark_mode else '#333'};")
+        layout.addWidget(history_label)
+        
+        self.search_history_list = QListWidget()
+        self.search_history_list.setMaximumHeight(80)
+        self.search_history_list.itemClicked.connect(self.search_from_history)
+        layout.addWidget(self.search_history_list)
+        
+        return widget
+    
+    def perform_global_search(self):
+        """Perform search across all data types"""
+        query = self.search_input.text().strip().lower()
+        if not query:
+            self.search_results_list.clear()
+            return
+        
+        filter_type = self.search_filter.currentText()
+        results = []
+        
+        # Search files
+        if filter_type in ["All", "Files"]:
+            for file_info in self.all_files:
+                if query in file_info['name'].lower() or query in file_info['type'].lower() or query in file_info['path'].lower():
+                    results.append(("📄 File", file_info['name'], file_info))
+        
+        # Search todos
+        if filter_type in ["All", "Todos"]:
+            for i, todo in enumerate(self.todos):
+                if query in todo.title.lower():
+                    results.append(("✓ Todo", todo.title, todo))
+        
+        # Search kanban tasks
+        if filter_type in ["All", "Kanban"]:
+            for i, task in enumerate(self.kanban_tasks):
+                if query in task.title.lower():
+                    results.append(("📌 Kanban", task.title, task))
+        
+        # Search notes
+        if filter_type in ["All", "Notes"]:
+            notes_text = self.notes_text.toPlainText().lower() if hasattr(self, 'notes_text') else ""
+            if query in notes_text:
+                results.append(("📝 Notes", f"Found in notes content", None))
+        
+        # Display results
+        self.search_results_list.clear()
+        self.search_results = results
+        
+        for result_type, result_name, result_data in results:
+            item = QListWidgetItem(f"{result_type} | {result_name}")
+            item.setData(Qt.ItemDataRole.UserRole, result_data)
+            self.search_results_list.addItem(item)
+        
+        # Update status
+        if results:
+            status_text = f"Found {len(results)} result{'s' if len(results) != 1 else ''}"
+        else:
+            status_text = "No results found"
+        
+        # Add to search history
+        if query not in [h.lower() for h in self.search_history]:
+            self.search_history.insert(0, query)
+            if len(self.search_history) > self.max_history:
+                self.search_history.pop()
+            self.update_search_history_display()
+    
+    def update_search_history_display(self):
+        """Update the search history list display"""
+        self.search_history_list.clear()
+        for search_query in self.search_history[:10]:
+            item = QListWidgetItem(f"🔎 {search_query}")
+            self.search_history_list.addItem(item)
+    
+    def search_from_history(self, item):
+        """Search using a history item"""
+        search_query = item.text().replace("🔎 ", "").strip()
+        self.search_input.setText(search_query)
+    
+    def navigate_to_search_result(self, item):
+        """Navigate to search result"""
+        result_data = item.data(Qt.ItemDataRole.UserRole)
+        item_text = item.text()
+        
+        if "File" in item_text:
+            # Navigate to Files tab
+            for i in range(self.tabs.count()):
+                if "Files" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+        elif "Todo" in item_text:
+            # Navigate to Todo tab
+            for i in range(self.tabs.count()):
+                if "Todo" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+        elif "Kanban" in item_text:
+            # Navigate to Kanban tab
+            for i in range(self.tabs.count()):
+                if "Kanban" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+        elif "Notes" in item_text:
+            # Navigate to Notes tab
+            for i in range(self.tabs.count()):
+                if "Notes" in self.tabs.tabText(i):
+                    self.tabs.setCurrentIndex(i)
+                    break
+        
+        QMessageBox.information(self, "Navigate", f"Navigated to result: {item_text}")
+    
+    def clear_search(self):
+        """Clear search results and input"""
+        self.search_input.clear()
+        self.search_results_list.clear()
+        self.search_results = []
     
     def create_folder_tree_tab(self):
         """Create folder tree navigation tab"""

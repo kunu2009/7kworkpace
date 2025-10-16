@@ -65,12 +65,28 @@ class TodoItem:
 
 
 class KanbanTask:
-    """Kanban task with status, priority, and pinning"""
+    """Kanban task with status, priority, description, and pinning"""
     def __init__(self, title, status="To Do", priority="Normal"):
         self.title = title
         self.status = status  # To Do, In Progress, Done
-        self.priority = priority
-        self.is_pinned = False  # NEW: Pin/star functionality
+        self.priority = priority  # High, Normal, Low
+        self.description = ""  # Task description
+        self.due_date = None  # Optional due date
+        self.color = self.get_priority_color()  # Color based on priority
+        self.is_pinned = False  # Pin/star functionality
+    
+    def get_priority_color(self):
+        """Get color based on priority level"""
+        if self.priority == "High":
+            return "#ff4444"  # Red
+        elif self.priority == "Low":
+            return "#4488ff"  # Blue
+        else:
+            return "#ffaa44"  # Orange for Normal
+    
+    def update_color(self):
+        """Update color when priority changes"""
+        self.color = self.get_priority_color()
 
 
 class WorkspaceOrganizer(QMainWindow):
@@ -1176,12 +1192,18 @@ Streak: {self.stats['current_streak']} days"""
         title.setStyleSheet(title_style)
         layout.addWidget(title)
         
-        # Input area
+        # Input area with priority selector
         input_layout = QHBoxLayout()
         self.kanban_input = QLineEdit()
         self.kanban_input.setPlaceholderText("Add new task...")
         self.kanban_input.setStyleSheet(f"background-color: {'#2d2d2d' if self.dark_mode else 'white'}; color: {'#e0e0e0' if self.dark_mode else '#333'}; border: 2px solid #667eea; border-radius: 5px; padding: 8px;")
         input_layout.addWidget(self.kanban_input)
+        
+        # Priority selector
+        self.kanban_priority = QComboBox()
+        self.kanban_priority.addItems(["Normal", "High", "Low"])
+        self.kanban_priority.setStyleSheet(f"background-color: {'#2d2d2d' if self.dark_mode else 'white'}; color: {'#e0e0e0' if self.dark_mode else '#333'}; border: 2px solid #667eea; border-radius: 5px; padding: 5px;")
+        input_layout.addWidget(self.kanban_priority)
         
         add_btn = QPushButton("➕ Add")
         add_btn.clicked.connect(self.add_kanban_task)
@@ -1255,10 +1277,11 @@ Streak: {self.stats['current_streak']} days"""
         return frame
     
     def add_kanban_task(self):
-        """Add new Kanban task"""
+        """Add new Kanban task with priority"""
         text = self.kanban_input.text().strip()
         if text:
-            task = KanbanTask(text, "To Do")
+            priority = self.kanban_priority.currentText()
+            task = KanbanTask(text, "To Do", priority)
             self.kanban_tasks.append(task)
             self.kanban_input.clear()
             self.update_kanban_display()
@@ -1281,8 +1304,13 @@ Streak: {self.stats['current_streak']} days"""
         # Add tasks to appropriate columns (pinned first)
         for task in self.kanban_tasks:
             pin_icon = "📌" if task.is_pinned else "  "
-            task_item = QListWidgetItem(f"{pin_icon} 📋 {task.title}")
+            priority_icon = {"High": "🔴", "Normal": "🟠", "Low": "🔵"}.get(task.priority, "🟠")
+            task_item = QListWidgetItem(f"{pin_icon} {priority_icon} {task.title}")
             task_item.setData(Qt.ItemDataRole.UserRole, self.kanban_tasks.index(task))
+            
+            # Set background color based on priority
+            task_item.setBackground(QColor(task.color))
+            task_item.setForeground(QColor("white"))
             
             if task.status == "To Do" and todo_list:
                 todo_list.addItem(task_item)
@@ -1320,29 +1348,67 @@ Streak: {self.stats['current_streak']} days"""
                 self.update_kanban_display()
     
     def show_kanban_context_menu(self, pos, column_list):
-        """Show right-click context menu for kanban tasks"""
+        """Show right-click context menu for kanban tasks with priority and status options"""
         item = column_list.itemAt(pos)
         if not item:
             return
         
         menu = QMenu()
         
-        # Pin/Unpin action
         current = column_list.row(item)
         if current >= 0:
             original_index = item.data(Qt.ItemDataRole.UserRole)
             if original_index is not None and original_index < len(self.kanban_tasks):
-                is_pinned = self.kanban_tasks[original_index].is_pinned
+                task = self.kanban_tasks[original_index]
+                
+                # Pin/Unpin action
+                is_pinned = task.is_pinned
                 pin_action = menu.addAction("📌 Unpin" if is_pinned else "📌 Pin")
                 pin_action.triggered.connect(lambda: self.pin_kanban_task(column_list))
-        
-        menu.addSeparator()
+                
+                menu.addSeparator()
+                
+                # Priority submenu
+                priority_menu = menu.addMenu("⭐ Set Priority")
+                for priority in ["High", "Normal", "Low"]:
+                    priority_action = priority_menu.addAction(priority)
+                    priority_action.triggered.connect(lambda checked=False, p=priority: self.set_kanban_priority(column_list, p))
+                
+                menu.addSeparator()
+                
+                # Status submenu
+                status_menu = menu.addMenu("📍 Move To")
+                for status in ["To Do", "In Progress", "Done"]:
+                    if status != task.status:
+                        status_action = status_menu.addAction(status)
+                        status_action.triggered.connect(lambda checked=False, s=status: self.move_kanban_task(column_list, s))
+                
+                menu.addSeparator()
         
         # Delete action
         delete_action = menu.addAction("🗑️ Delete")
         delete_action.triggered.connect(lambda: self.delete_kanban_task(column_list))
         
         menu.exec(column_list.mapToGlobal(pos))
+    
+    def set_kanban_priority(self, column_list, priority):
+        """Set priority for selected kanban task"""
+        current = column_list.currentRow()
+        if current >= 0 and column_list.item(current):
+            original_index = column_list.item(current).data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.kanban_tasks):
+                self.kanban_tasks[original_index].priority = priority
+                self.kanban_tasks[original_index].update_color()
+                self.update_kanban_display()
+    
+    def move_kanban_task(self, column_list, new_status):
+        """Move kanban task to different status"""
+        current = column_list.currentRow()
+        if current >= 0 and column_list.item(current):
+            original_index = column_list.item(current).data(Qt.ItemDataRole.UserRole)
+            if original_index is not None and original_index < len(self.kanban_tasks):
+                self.kanban_tasks[original_index].status = new_status
+                self.update_kanban_display()
     
     def create_pomodoro_tab(self):
         """Create Pomodoro timer tab"""

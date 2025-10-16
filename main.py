@@ -12,6 +12,8 @@ import traceback
 import shutil
 import subprocess
 import platform
+import csv
+from io import StringIO
 
 try:
     from PyQt6.QtWidgets import (
@@ -172,6 +174,23 @@ class WorkspaceOrganizer(QMainWindow):
         
         cleanup_action = tools_menu.addAction("🧹 Cleanup")
         cleanup_action.triggered.connect(self.cleanup_dialog)
+        
+        # Export menu
+        export_menu = menubar.addMenu("💾 Export")
+        
+        export_todos_action = export_menu.addAction("📝 Export Todos to CSV")
+        export_todos_action.triggered.connect(self.export_todos_csv)
+        
+        export_kanban_action = export_menu.addAction("📌 Export Kanban to CSV")
+        export_kanban_action.triggered.connect(self.export_kanban_csv)
+        
+        export_menu.addSeparator()
+        
+        export_notes_action = export_menu.addAction("📄 Export Notes to PDF")
+        export_notes_action.triggered.connect(self.export_notes_pdf)
+        
+        export_calendar_action = export_menu.addAction("📅 Export Calendar to iCal")
+        export_calendar_action.triggered.connect(self.export_calendar_ical)
         
         # Help menu
         help_menu = menubar.addMenu("❓ Help")
@@ -1918,6 +1937,169 @@ class WorkspaceOrganizer(QMainWindow):
     def update_time(self):
         """Update current time display"""
         self.time_label.setText(datetime.now().strftime('%H:%M'))
+    
+    def export_todos_csv(self):
+        """Export todos to CSV file"""
+        if not self.todos:
+            QMessageBox.warning(self, "Export", "No todos to export!")
+            return
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Export Todos", "", "CSV Files (*.csv)")
+        if not file_path:
+            return
+        
+        try:
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Title', 'Priority', 'Status', 'Created Date', 'Pinned'])
+                for todo in self.todos:
+                    writer.writerow([
+                        todo.title,
+                        todo.priority,
+                        'Completed' if todo.completed else 'Pending',
+                        todo.created_date.strftime('%Y-%m-%d %H:%M'),
+                        'Yes' if todo.is_pinned else 'No'
+                    ])
+            QMessageBox.information(self, "Export Success", f"Exported {len(self.todos)} todos to:\n{file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
+    
+    def export_kanban_csv(self):
+        """Export kanban tasks to CSV file"""
+        if not self.kanban_tasks:
+            QMessageBox.warning(self, "Export", "No kanban tasks to export!")
+            return
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Export Kanban Tasks", "", "CSV Files (*.csv)")
+        if not file_path:
+            return
+        
+        try:
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Title', 'Status', 'Priority', 'Pinned'])
+                for task in self.kanban_tasks:
+                    writer.writerow([
+                        task.title,
+                        task.status,
+                        task.priority,
+                        'Yes' if task.is_pinned else 'No'
+                    ])
+            QMessageBox.information(self, "Export Success", f"Exported {len(self.kanban_tasks)} tasks to:\n{file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
+    
+    def export_notes_pdf(self):
+        """Export notes to PDF file"""
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+            from reportlab.lib.units import inch
+        except ImportError:
+            QMessageBox.warning(self, "Missing Dependency", 
+                              "reportlab not installed. Install it with:\npip install reportlab")
+            return
+        
+        notes_text = self.notes_text.toPlainText() if hasattr(self, 'notes_text') else ""
+        if not notes_text.strip():
+            QMessageBox.warning(self, "Export", "No notes to export!")
+            return
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Export Notes to PDF", "", "PDF Files (*.pdf)")
+        if not file_path:
+            return
+        
+        try:
+            # Create PDF document
+            doc = SimpleDocTemplate(file_path, pagesize=letter)
+            styles = getSampleStyleSheet()
+            story = []
+            
+            # Add title
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor='#333333',
+                spaceAfter=30,
+                alignment=1  # Center
+            )
+            story.append(Paragraph("Workspace Organizer - Notes Export", title_style))
+            story.append(Spacer(1, 0.3*inch))
+            
+            # Add export date
+            date_style = ParagraphStyle(
+                'CustomNormal',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor='#666666',
+                spaceAfter=20
+            )
+            story.append(Paragraph(f"Exported on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", date_style))
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Add notes content
+            notes_lines = notes_text.split('\n')
+            for line in notes_lines:
+                if line.strip():
+                    story.append(Paragraph(line, styles['Normal']))
+                else:
+                    story.append(Spacer(1, 0.1*inch))
+            
+            # Build PDF
+            doc.build(story)
+            QMessageBox.information(self, "Export Success", f"Notes exported to:\n{file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
+    
+    def export_calendar_ical(self):
+        """Export calendar events to iCal format"""
+        try:
+            # For now, create a simple iCal format with current event data
+            # This is a simplified version - full implementation would require more event data
+            
+            file_path, _ = QFileDialog.getSaveFileName(self, "Export Calendar to iCal", "", "iCal Files (*.ics)")
+            if not file_path:
+                return
+            
+            # Create basic iCal file
+            ical_content = """BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Workspace Organizer//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Workspace Organizer Calendar
+X-WR-CALDESC:Calendar exported from Workspace Organizer
+"""
+            
+            # Add events for all non-completed todos
+            for todo in self.todos:
+                if not todo.completed and hasattr(todo, 'created_date'):
+                    # Create a VEVENT for each todo
+                    event_id = f"todo-{self.todos.index(todo)}@workspaceorganizer"
+                    created = todo.created_date.strftime('%Y%m%dT%H%M%S')
+                    now = datetime.now().strftime('%Y%m%dT%H%M%S')
+                    
+                    ical_content += f"""BEGIN:VEVENT
+UID:{event_id}
+DTSTAMP:{now}Z
+DTSTART:{created}Z
+SUMMARY:{todo.title}
+DESCRIPTION:Priority: {todo.priority}
+STATUS:{'COMPLETED' if todo.completed else 'TODO'}
+END:VEVENT
+"""
+            
+            ical_content += "END:VCALENDAR"
+            
+            # Write to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(ical_content)
+            
+            QMessageBox.information(self, "Export Success", f"Calendar exported to:\n{file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
     
     def show_about(self):
         """Show about dialog"""
